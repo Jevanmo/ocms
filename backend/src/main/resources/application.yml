@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/ocms_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 200MB
+
+server:
+  port: 8080
+
+app:
+  jwt-secret: 5f4dcc3b5aa765d61d8327deb882cf99LONG_SECRET_EXAMPLE
+  jwt-expiration-ms: 86400000
+  upload-dir: uploads
+  # Comma-separated. Override in production (e.g. https://your-app.vercel.app)
+  cors-allowed-origins: http://localhost:5173,http://localhost:3000
