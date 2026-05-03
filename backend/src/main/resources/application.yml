@@ -16,7 +16,8 @@ spring:
       max-request-size: 200MB
 
 server:
-  port: 8080
+  # Railway (and similar) set PORT; local dev defaults to 8080
+  port: ${PORT:8080}
 
 app:
   jwt-secret: 5f4dcc3b5aa765d61d8327deb882cf99LONG_SECRET_EXAMPLE

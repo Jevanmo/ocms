@@ -1,0 +1,14 @@
+# Railway: create a project, add a MySQL plugin, then deploy this service with
+# Root Directory = backend (or set Dockerfile path to backend/Dockerfile from repo root).
+# Link the MySQL service to this service and set env vars (see README).
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+numReplicas = 1
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+healthcheckPath = "/api/health"
+healthcheckTimeout = 100

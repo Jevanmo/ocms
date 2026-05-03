@@ -85,11 +85,64 @@ git remote add origin https://github.com/<your-username>/<your-repo>.git
 git push -u origin main
 ```
 
-## Deploy Online
+## Deploy everything on Railway (recommended if you want one platform)
+
+Use **three pieces** in one Railway project: **MySQL**, **backend** (Spring Boot), **frontend** (static UI). The API listens on Railway’s `PORT`; the UI image uses `serve` on the same `PORT` pattern.
+
+### 1) Repo + project
+
+1. Push this repo to GitHub.
+2. [Railway](https://railway.app) → **New Project** → **Deploy from GitHub repo** → select it.
+
+### 2) MySQL
+
+- **New** → **Database** → **MySQL** (or the MySQL template Railway shows).
+- Open the database → **Variables** / **Connect** and note host, port, database name, user, password (or any `DATABASE_URL` / JDBC hints Railway provides).
+
+### 3) Backend service
+
+1. **New** → deploy the **same** GitHub repo again (or add a service and connect the repo).
+2. **Settings** → **Root Directory** → `backend` (uses `backend/Dockerfile` + `backend/railway.toml`).
+3. **Variables** (examples — names on your MySQL service may differ slightly):
+   - `SPRING_DATASOURCE_URL` — JDBC URL for Railway MySQL, e.g. `jdbc:mysql://HOST:PORT/railway?createDatabaseIfNotExist=true&useSSL=true&allowPublicKeyRetrieval=true`
+   - `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD`
+   - `APP_JWT_SECRET` — long random string (never commit real secrets).
+   - `APP_UPLOAD_DIR` — e.g. `/app/uploads` (disk is **ephemeral** unless you add storage; for serious production use object storage).
+   - `APP_CORS_ALLOWED_ORIGINS` — set **after** step 4: your **frontend** public origin(s), comma-separated, e.g. `https://your-ui.up.railway.app,http://localhost:5173`
+4. **Settings** → **Networking** → **Generate Domain**. Copy the API base, e.g. `https://ocms-api.up.railway.app` (no `/api` suffix in the hostname).
+
+The JVM app uses `server.port: ${PORT:8080}` so it binds correctly on Railway. **Health check:** `GET /api/health` returns `{"status":"ok"}` (public, no auth). Railway can use this path in **Settings → Healthcheck** if you set one manually; `backend/railway.toml` also references it for deploy health checks where supported.
+
+### 4) Frontend service
+
+1. **New** → same repo again.
+2. **Root Directory** → `frontend` (uses `frontend/Dockerfile` + `frontend/railway.toml`).
+3. Add variable **`VITE_API_URL`** = `https://YOUR-BACKEND-DOMAIN/api` (**no trailing slash**). In Railway’s variable UI, enable **available at build time** / **Build** (so Docker `npm run build` sees it and Vite bakes the URL into the bundle).
+4. Deploy, then **Generate Domain** for the frontend (e.g. `https://ocms-ui.up.railway.app`).
+
+### 5) CORS round-trip
+
+1. Edit the **backend** service → set `APP_CORS_ALLOWED_ORIGINS` to include your **frontend** Railway URL exactly (scheme + host, no path).
+2. Redeploy the backend if it already deployed without the right CORS value.
+
+If the UI still cannot log in or load data, check: `VITE_API_URL` ends with `/api`, backend domain is public, and CORS lists the frontend origin.
+
+### Local “production-like” stack (Docker)
+
+On your machine, **start Docker Desktop**, then from the repo root:
+
+```bash
+docker compose up -d --build
+```
+
+- UI: `http://localhost:5173`
+- API: `http://localhost:8080`
+
+## Deploy Online (other options)
 
 Use one of these approaches:
 - Single VM (AWS EC2/Azure/DigitalOcean): install Docker and run `docker compose up -d --build`
-- Render/Railway/Fly.io: deploy backend and frontend as separate services, and use managed MySQL
+- Render/Fly.io: deploy backend and frontend as separate services; use managed MySQL or an external MySQL host (Render’s default managed DB is PostgreSQL, so MySQL is usually a separate provider).
 
 For production:
 - change DB/JWT secrets via env vars

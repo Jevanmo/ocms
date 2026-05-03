@@ -28,12 +28,17 @@ services:
       - uploads_data:/app/uploads
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:8080/api
     container_name: ocms-frontend
     depends_on:
       - backend
+    environment:
+      PORT: "3000"
     ports:
-      - "5173:80"
+      - "5173:3000"
 
 volumes:
   mysql_data:
